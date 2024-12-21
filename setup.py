@@ -102,9 +102,9 @@ if not compute_capabilities:
     device_count = torch.cuda.device_count()
     for i in range(device_count):
         major, minor = torch.cuda.get_device_capability(i)
-        if major < 8:
-            raise RuntimeError(
-                "GPUs with compute capability below 8.0 are not supported.")
+        #if major < 8:
+        #    raise RuntimeError(
+        #        "GPUs with compute capability below 8.0 are not supported.")
         compute_capabilities.add(f"{major}.{minor}")
 
 nvcc_cuda_version = get_nvcc_cuda_version(CUDA_HOME)
@@ -112,8 +112,8 @@ if not compute_capabilities:
     raise RuntimeError("No GPUs found. Please specify the target GPU architectures or build on a machine with GPUs.")
 
 # Validate the NVCC CUDA version.
-if nvcc_cuda_version < Version("12.0"):
-    raise RuntimeError("CUDA 12.0 or higher is required to build the package.")
+#if nvcc_cuda_version < Version("12.0"):
+#    raise RuntimeError("CUDA 12.0 or higher is required to build the package.")
 if nvcc_cuda_version < Version("12.4"):
     if any(cc.startswith("8.9") for cc in compute_capabilities):
         raise RuntimeError(

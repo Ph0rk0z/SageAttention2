@@ -58,13 +58,14 @@ __global__ void qk_int_sv_f16_attn_kernel(int8_t *__restrict__ Q, int8_t *__rest
   static_assert(K_GRAN == QuantGranularity::kPerBlock || K_GRAN == QuantGranularity::kPerWarp || K_GRAN == QuantGranularity::kPerThread, "K_GRAN must be kPerBlock, kPerWarp or kPerThread");
   static_assert(std::is_same<DTypeSVAccum, float>::value || !use_inst_buffer, "use_inst_buffer only supports DTypeSVAccum as float");
   static_assert(std::is_same<DTypeSVAccum, float>::value || std::is_same<DTypeSVAccum, half>::value, "DTypeSVAccum must be float or half");
-  static_assert(std::is_same<DTypeOut, half>::value || std::is_same<DTypeOut, nv_bfloat16>::value, "DTypeOut must be half or nv_bfloat16");
+ // static_assert(std::is_same<DTypeOut, half>::value || std::is_same<DTypeOut, nv_bfloat16>::value, "DTypeOut must be half or nv_bfloat16");
   static_assert(head_dim % 64 == 0, "head_dim must be a multiple of 64");
   static_assert(!fuse_v_mean || std::is_same<DTypeSVAccum, half>::value, "fuse_v_mean only supports half");
   static_assert(CTA_Q / CTA_K <= 2); // for efficient causal implementation
 
+#if defined(__CUDA_ARCH__) && __CUDA_ARCH__ > 800
   using DTypeOut2 = typename std::conditional<std::is_same<DTypeOut, half>::value, half2, nv_bfloat162>::type;
-
+#endif
   constexpr uint32_t num_warps_q = CTA_Q / WARP_Q;
   constexpr uint32_t num_warps_k = CTA_K / WARP_K;
   constexpr uint32_t num_warps = num_warps_q * num_warps_k;
@@ -542,7 +543,7 @@ __global__ void qk_int_sv_f16_attn_kernel(int8_t *__restrict__ Q, int8_t *__rest
   // save the result
   // if (get_warp_idx_k<num_warps_q, num_warps_k>() == 0)
   // {
-
+#if defined(__CUDA_ARCH__) && __CUDA_ARCH__ > 800
   // convert half to bfloat16
   if constexpr (std::is_same<DTypeSVAccum, half>::value && std::is_same<DTypeOut, nv_bfloat16>::value)
   {
@@ -580,7 +581,7 @@ __global__ void qk_int_sv_f16_attn_kernel(int8_t *__restrict__ Q, int8_t *__rest
       }
     }
   }
-
+#endif
   // save the result to shared memory
   uint32_t smem_O_row_base = get_warp_idx_q<num_warps_q, num_warps_k>() * WARP_Q + lane_id / 4;
 #pragma unroll
@@ -602,10 +603,12 @@ __global__ void qk_int_sv_f16_attn_kernel(int8_t *__restrict__ Q, int8_t *__rest
           {
             ((half2*)RO_f16)[k] = __float22half2_rn(((float2*)RO[fq][fv])[k]);
           }
+#if defined(__CUDA_ARCH__) && __CUDA_ARCH__ > 800
           else if constexpr (std::is_same<DTypeOut, nv_bfloat16>::value)
           {
             ((nv_bfloat162*)RO_f16)[k] = __float22bfloat162_rn(((float2*)RO[fq][fv])[k]);
           }
+#endif
         }
 
         ((int32_t*)(smem_O.base + offset_O))[lane_id % 4] = RO_f16[0];

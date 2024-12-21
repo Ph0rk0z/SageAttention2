@@ -774,10 +774,12 @@ __global__ void qk_int_sv_f8_attn_buffer_kernel(int8_t *__restrict__ Q, int8_t *
         {
           ((half2*)RO_f16)[k] = __float22half2_rn(((float2*)RO_buf[fq][fv])[k]);
         }
+#if defined(__CUDA_ARCH__) && __CUDA_ARCH__ > 800
         else
         {
           ((nv_bfloat162*)RO_f16)[k] = __float22bfloat162_rn(((float2*)RO_buf[fq][fv])[k]);
         }
+#endif
       }
 
       ((int32_t*)(smem_O.base + offset_O))[lane_id % 4] = RO_f16[0];

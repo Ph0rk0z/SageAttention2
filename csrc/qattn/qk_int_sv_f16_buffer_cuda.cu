@@ -56,11 +56,13 @@ __global__ void qk_int_sv_f16_attn_buffer_kernel(int8_t *__restrict__ Q, int8_t 
   static_assert(DTypeQK == DataType::kInt8 || DTypeQK == DataType::kInt4, "DTypeQK must be int8 or int4");
   static_assert(Q_GRAN == QuantGranularity::kPerBlock || Q_GRAN == QuantGranularity::kPerWarp || Q_GRAN == QuantGranularity::kPerThread, "Q_GRAN must be kPerBlock, kPerWarp or kPerThread");
   static_assert(K_GRAN == QuantGranularity::kPerBlock || K_GRAN == QuantGranularity::kPerWarp || K_GRAN == QuantGranularity::kPerThread, "K_GRAN must be kPerBlock, kPerWarp or kPerThread");
-  static_assert(std::is_same<DTypeOut, half>::value || std::is_same<DTypeOut, nv_bfloat16>::value, "DTypeOut must be half or nv_bfloat16");
+  //static_assert(std::is_same<DTypeOut, half>::value || std::is_same<DTypeOut, nv_bfloat16>::value, "DTypeOut must be half or nv_bfloat16");
   static_assert(head_dim % 64 == 0, "head_dim must be a multiple of 64");
   static_assert(CTA_Q / CTA_K <= 2); // for efficient causal implementation
 
+#if defined(__CUDA_ARCH__) && __CUDA_ARCH__ > 800
   using DTypeOut2 = typename std::conditional<std::is_same<DTypeOut, half>::value, half2, nv_bfloat162>::type;
+#endif
 
   constexpr uint32_t num_warps_q = CTA_Q / WARP_Q;
   constexpr uint32_t num_warps_k = CTA_K / WARP_K;
@@ -650,10 +652,12 @@ __global__ void qk_int_sv_f16_attn_buffer_kernel(int8_t *__restrict__ Q, int8_t 
         {
           ((half2*)RO_f16)[k] = __float22half2_rn(((float2*)RO_buf[fq][fv])[k]);
         }
+#if defined(__CUDA_ARCH__) && __CUDA_ARCH__ > 800
         else if constexpr (std::is_same<DTypeOut, nv_bfloat16>::value)
         {
           ((nv_bfloat162*)RO_f16)[k] = __float22bfloat162_rn(((float2*)RO_buf[fq][fv])[k]);
         }
+#endif
       }
 
       ((int32_t*)(smem_O.base + offset_O))[lane_id % 4] = RO_f16[0];

@@ -34,31 +34,35 @@ enum class QuantType
 template <typename T>
 __device__ __forceinline__ float convert_to_float(T val)
 {
-  static_assert(std::is_same<T, half>::value || std::is_same<T, nv_bfloat16>::value, "Only half and bfloat16 are supported");
+//  static_assert(std::is_same<T, half>::value || std::is_same<T, nv_bfloat16>::value, "Only half and bfloat16 are supported");
 
   if constexpr (std::is_same<T, half>::value)
   {
     return __half2float(val);
   }
+#if defined(__CUDA_ARCH__) && __CUDA_ARCH__ > 800
   else if constexpr (std::is_same<T, nv_bfloat16>::value)
   {
     return __bfloat162float(val);
   }
+#endif
 }
 
 template <typename T>
 __device__ __forceinline__ T convert_from_float(float val)
 {
-  static_assert(std::is_same<T, half>::value || std::is_same<T, nv_bfloat16>::value, "Only half and bfloat16 are supported");
+//  static_assert(std::is_same<T, half>::value || std::is_same<T, nv_bfloat16>::value, "Only half and bfloat16 are supported");
 
   if constexpr (std::is_same<T, half>::value)
   {
     return __float2half_rn(val);
   }
+#if defined(__CUDA_ARCH__) && __CUDA_ARCH__ > 800
   else if constexpr (std::is_same<T, nv_bfloat16>::value)
   {
     return __float2bfloat16_rn(val);
   }
+#endif
 }
 
 template <uint32_t head_dim, uint32_t BLOCK_SIZE, uint32_t num_pack_per_thread = 1, bool has_sm_scale = false, bool sub_mean = false, typename T>
@@ -68,7 +72,7 @@ __global__ void QuantInt8Kernel(T *__restrict__ input, T *__restrict__ mean, int
                             const uint32_t stride_bz_output, const uint32_t stride_seq_output, const uint32_t stride_h_output,
                             const uint32_t stride_bz_scale, const uint32_t stride_h_scale)
 {
-  static_assert(std::is_same<T, half>::value || std::is_same<T, nv_bfloat16>::value, "Only half and bfloat16 are supported");
+//  static_assert(std::is_same<T, half>::value || std::is_same<T, nv_bfloat16>::value, "Only half and bfloat16 are supported");
   static_assert(num_pack_per_thread > 0, "The number of pack per thread must be greater than 0");
 
   constexpr uint32_t pack_size = 8; // float4 contains 8 half or 8 bfloat16
@@ -204,11 +208,14 @@ __global__ void SubMeanKernel(T *__restrict__ input, T *__restrict__ mean, half 
                             const uint32_t stride_bz_mean, const uint32_t stride_h_mean,
                             const uint32_t stride_bz_output, const uint32_t stride_seq_output, const uint32_t stride_h_output)
 {
-  static_assert(std::is_same<T, half>::value || std::is_same<T, nv_bfloat16>::value, "Only half and bfloat16 are supported");
+//  static_assert(std::is_same<T, half>::value || std::is_same<T, nv_bfloat16>::value, "Only half and bfloat16 are supported");
   static_assert(num_pack_per_thread > 0, "The number of pack per thread must be greater than 0");
 
+#if defined(__CUDA_ARCH__) && __CUDA_ARCH__ > 800
   using T2 = typename std::conditional<std::is_same<T, half>::value, half2, nv_bfloat162>::type;
-
+#else
+  using T2 = typename std::conditional<std::is_same<T, half>::value, half2, half2>::type;
+#endif
   constexpr uint32_t pack_size = 8; // float4 contains 8 half or 8 bfloat16
   constexpr uint32_t num_threads_per_token = head_dim / pack_size;
 
@@ -241,11 +248,12 @@ __global__ void SubMeanKernel(T *__restrict__ input, T *__restrict__ mean, half 
       for (uint32_t j = 0; j < 4; j++)
       {
         x_val[i][j] = __hsub2(x_val[i][j], mean_val[j]);
-
+#if defined(__CUDA_ARCH__) && __CUDA_ARCH__ > 800
         if constexpr (std::is_same<T, nv_bfloat16>::value)
         {
           ((half2*)x_val[i])[j] = __float22half2_rn(__bfloat1622float2(x_val[i][j])); 
         }
+#endif
       }
     }
   }
@@ -266,7 +274,7 @@ __global__ void TransposePadPermuteKernel(T *__restrict__ input, T *__restrict__
                             const uint32_t stride_bz_output, const uint32_t stride_d_output, const uint32_t stride_h_output)
 {
 
-  static_assert(std::is_same<T, half>::value || std::is_same<T, nv_bfloat16>::value, "Only half and bfloat16 are supported");
+//  static_assert(std::is_same<T, half>::value || std::is_same<T, nv_bfloat16>::value, "Only half and bfloat16 are supported");
 
   constexpr uint32_t pack_size = 8; // float4 contains 8 half or 8 bfloat16
   uint32_t num_threads_per_token = head_dim / pack_size;
@@ -321,7 +329,7 @@ __global__ void MeanScaleKernel(T *__restrict__ input, int8_t *__restrict__ outp
                             const uint32_t stride_bz_mean, const uint32_t stride_h_mean,
                             const uint32_t stride_bz_scale, const uint32_t stride_h_scale)
 {
-  static_assert(std::is_same<T, half>::value || std::is_same<T, __nv_bfloat16>::value, "Only half and bfloat16 are supported");
+//  static_assert(std::is_same<T, half>::value || std::is_same<T, __nv_bfloat16>::value, "Only half and bfloat16 are supported");
 
   constexpr uint32_t pack_size = 8; // float4 contains 8 half or 8 bfloat16
 
