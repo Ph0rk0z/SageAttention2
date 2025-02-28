@@ -47,7 +47,7 @@ namespace mma{
 #endif
 
 #if defined(__CUDA_ARCH__)
-#define RUNTIME_ASSERT(x) __brkpt()
+#define RUNTIME_ASSERT(x) do {} while(0)  // Do nothing at runtime
 #else
 #include <assert.h>
 #define RUNTIME_ASSERT(x) assert(0 && x)
