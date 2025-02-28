@@ -72,7 +72,7 @@
     throw std::invalid_argument(err_msg.str());                  \
   }
 
-#define DISPATCH_PYTORCH_DTYPE_TO_CTYPE_FP16(pytorch_dtype, c_type, ...)                \
+#define DISPATCH_PYTORCH_DTYPE_TO_CTYPE_FP16_FULL(pytorch_dtype, c_type, ...)                \
   if (pytorch_dtype == at::ScalarType::Half) {                                          \
     using c_type = half;                                                                \
     __VA_ARGS__                                                                         \
