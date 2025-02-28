@@ -139,3 +139,4 @@ __device__ __forceinline__ void pred_load_128b(T* smem_ptr, const T* gmem_ptr, b
 }
 
 } // namespace cp_async
+
