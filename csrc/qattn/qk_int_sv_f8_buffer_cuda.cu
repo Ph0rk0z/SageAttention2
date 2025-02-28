@@ -58,7 +58,7 @@ __global__ void qk_int_sv_f8_attn_buffer_kernel(int8_t *__restrict__ Q, int8_t *
   static_assert(K_GRAN == QuantGranularity::kPerBlock || K_GRAN == QuantGranularity::kPerWarp || K_GRAN == QuantGranularity::kPerThread, "K_GRAN must be kPerBlock, kPerWarp or kPerThread");
   static_assert(head_dim % 64 == 0, "head_dim must be a multiple of 64");
   static_assert(std::is_same<DTypeSVAccum, float>::value, "DTypeSVAccum must be float, half is WIP");
-  static_assert(std::is_same<DTypeOut, half>::value || std::is_same<DTypeOut, nv_bfloat16>::value, "DTypeOut must be half or nv_bfloat16");
+  //static_assert(std::is_same<DTypeOut, half>::value || std::is_same<DTypeOut, nv_bfloat16>::value, "DTypeOut must be half or nv_bfloat16");
   static_assert(CTA_K % 64 == 0);
   static_assert(CTA_Q / CTA_K <= 2); // for efficient causal implementation
 
@@ -75,7 +75,7 @@ __global__ void qk_int_sv_f8_attn_buffer_kernel(int8_t *__restrict__ Q, int8_t *
   //                       for fp16: head_dim
   constexpr uint32_t V_SMEM_STRIDE = CTA_K;
 
-  extern __shared__ int8_t smem[];
+  __align__(16) extern __shared__ int8_t smem[];
 
   const uint32_t lane_id = get_lane_id();
   const uint32_t warp_id = get_warp_id();
@@ -766,7 +766,7 @@ __global__ void qk_int_sv_f8_attn_buffer_kernel(int8_t *__restrict__ Q, int8_t *
       uint32_t offset_O = smem_O.get_permuted_offset(smem_O_row_base + fq * MMA_QK_M, fv * (MMA_SV_N / PACK_SIZE_O));
 
       // convert RO_buf to half
-      uint32_t RO_f16[4];
+      uint32_t RO_f16[4] = {0, 0, 0, 0};
 #pragma unroll
       for (uint32_t k = 0; k < 4; k++)
       {

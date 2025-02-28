@@ -25,7 +25,7 @@ import torch
 from torch.utils.cpp_extension import BuildExtension, CUDAExtension, CUDA_HOME
 
 # Supported NVIDIA GPU architectures.
-SUPPORTED_ARCHS = {"8.0", "8.6", "8.7", "8.9", "9.0"}
+SUPPORTED_ARCHS = {"7.5", "8.0", "8.6", "8.7", "8.9", "9.0"}
 
 # Compiler flags.
 CXX_FLAGS = ["-g", "-O3", "-fopenmp", "-lgomp", "-std=c++17", "-DENABLE_BF16"]
@@ -137,8 +137,8 @@ qattn_extension = CUDAExtension(
     sources=[
         "csrc/qattn/pybind.cpp",
         "csrc/qattn/qk_int_sv_f16_cuda.cu",
-        "csrc/qattn/qk_int_sv_f8_cuda.cu",
         "csrc/qattn/qk_int_sv_f16_buffer_cuda.cu",
+        "csrc/qattn/qk_int_sv_f8_cuda.cu",
         "csrc/qattn/qk_int_sv_f8_buffer_cuda.cu",
     ],
     extra_compile_args={

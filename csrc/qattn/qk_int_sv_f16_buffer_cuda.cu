@@ -76,7 +76,7 @@ __global__ void qk_int_sv_f16_attn_buffer_kernel(int8_t *__restrict__ Q, int8_t 
   constexpr uint32_t O_SMEM_STRIDE = head_dim;
   constexpr uint32_t V_SMEM_STRIDE = head_dim;
 
-  extern __shared__ int8_t smem[];
+  __align__(16) extern __shared__ int8_t smem[];
 
   const uint32_t lane_id = get_lane_id();
   const uint32_t warp_id = get_warp_id();
@@ -310,7 +310,7 @@ __global__ void qk_int_sv_f16_attn_buffer_kernel(int8_t *__restrict__ Q, int8_t 
         accumulate_d<num_tiles_q, num_tiles_k, ComputeUnit::kCudaCore>(RS_f32, d);
       }
 
-      uint32_t RS_f16[num_tiles_q][num_tiles_k][4];
+      uint32_t RS_f16[num_tiles_q][num_tiles_k][4] = {{{0}}};
       RS_32_to_16<num_tiles_q, num_tiles_k>(RS_f32, RS_f16);
 
       if constexpr (DenominatorAccumUnit == ComputeUnit::kTensorCore)
@@ -417,7 +417,7 @@ __global__ void qk_int_sv_f16_attn_buffer_kernel(int8_t *__restrict__ Q, int8_t 
       accumulate_d<num_tiles_q, num_tiles_k, ComputeUnit::kCudaCore>(RS_f32, d);
     }
 
-    uint32_t RS_f16[num_tiles_q][num_tiles_k][4];
+    uint32_t RS_f16[num_tiles_q][num_tiles_k][4]  = {{{0}}};
     RS_32_to_16<num_tiles_q, num_tiles_k>(RS_f32, RS_f16);
 
     if constexpr (DenominatorAccumUnit == ComputeUnit::kTensorCore)
@@ -500,7 +500,7 @@ __global__ void qk_int_sv_f16_attn_buffer_kernel(int8_t *__restrict__ Q, int8_t 
       accumulate_d<num_tiles_q, num_tiles_k, ComputeUnit::kCudaCore>(RS_f32, d);
     }
 
-    uint32_t RS_f16[num_tiles_q][num_tiles_k][4];
+    uint32_t RS_f16[num_tiles_q][num_tiles_k][4]  = {{{0}}};
     RS_32_to_16<num_tiles_q, num_tiles_k>(RS_f32, RS_f16);
 
     if constexpr (DenominatorAccumUnit == ComputeUnit::kTensorCore)
@@ -583,7 +583,7 @@ __global__ void qk_int_sv_f16_attn_buffer_kernel(int8_t *__restrict__ Q, int8_t 
       accumulate_d<num_tiles_q, num_tiles_k, ComputeUnit::kCudaCore>(RS_f32, d);
     }
 
-    uint32_t RS_f16[num_tiles_q][num_tiles_k][4];
+    uint32_t RS_f16[num_tiles_q][num_tiles_k][4]  = {{{0}}};
     RS_32_to_16<num_tiles_q, num_tiles_k>(RS_f32, RS_f16);
 
     if constexpr (DenominatorAccumUnit == ComputeUnit::kTensorCore)
@@ -644,7 +644,7 @@ __global__ void qk_int_sv_f16_attn_buffer_kernel(int8_t *__restrict__ Q, int8_t 
       uint32_t offset_O = smem_O.get_permuted_offset(smem_O_row_base + fq * MMA_QK_M, fv * (MMA_SV_N / PACK_SIZE_O));
 
       // convert RO_buf to half
-      uint32_t RO_f16[4];
+      uint32_t RO_f16[4]  = {0, 0, 0, 0};
 #pragma unroll
       for (uint32_t k = 0; k < 4; k++)
       { 
