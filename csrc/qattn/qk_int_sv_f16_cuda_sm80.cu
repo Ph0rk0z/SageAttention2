@@ -65,6 +65,7 @@ __global__ void qk_int_sv_f16_attn_kernel(int8_t *__restrict__ Q, int8_t *__rest
 #if defined(__CUDA_ARCH__) && __CUDA_ARCH__ > 800
   using DTypeOut2 = typename std::conditional<std::is_same<DTypeOut, half>::value, half2, nv_bfloat162>::type;
 #endif
+
   constexpr uint32_t num_warps_q = CTA_Q / WARP_Q;
   constexpr uint32_t num_warps_k = CTA_K / WARP_K;
   constexpr uint32_t num_warps = num_warps_q * num_warps_k;
