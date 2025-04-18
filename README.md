@@ -50,7 +50,7 @@ pip install sageattention==1.0.6
 To use SageAttention 2.0.1, please compile from source:
 ```
 git clone https://github.com/thu-ml/SageAttention.git
-cd sageattention 
+cd SageAttention 
 pip install -e . # or python setup.py install
 ```
 
