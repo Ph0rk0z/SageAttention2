@@ -31,7 +31,14 @@ def _attn_fwd_inner(acc, l_i, m_i, q, q_scale, kv_len,
         k_mask = offs_n[None, :] < (kv_len - start_n)   
         k = tl.load(K_ptrs, mask = k_mask)
         k_scale = tl.load(K_scale_ptr)
-        qk = tl.dot(q, k).to(tl.float32) * q_scale * k_scale 
+        #qk = tl.dot(q, k).to(tl.float32) * q_scale * k_scale
+
+        q_fp16 = (q * q_scale).to(tl.float16)
+        k_fp16 = (k * k_scale).to(tl.float16)
+
+        qk = tl.dot(q_fp16, k_fp16)
+        qk = tl.maximum(qk, -14.0)
+ 
         m_ij = tl.maximum(m_i, tl.max(qk, 1))
         qk = qk - m_ij[:, None]
         p = tl.math.exp2(qk)
@@ -103,7 +110,7 @@ def _attn_fwd(Q, K, V, Q_scale, K_scale, Out, Lse,
         tl.store(lse_ptrs, l_i, mask = (offs_m < qo_len))
 
 def forward(q, k, v, q_scale, k_scale, tensor_layout="HND", output_dtype=torch.float16, return_lse=False):
-    BLOCK_M = 128
+    BLOCK_M = 64
     BLOCK_N = 64
     stage = 1
 
