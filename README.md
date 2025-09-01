@@ -13,6 +13,7 @@ Status as of 2.1.1:
 Compiles on cuda 11.8
 
 fused kernel : working on SM75
+
 qattn: compiles and runs when selected (nans)
 
 9/1/25 - triton w/fused works on ComfyUI with SageAttention command line.
