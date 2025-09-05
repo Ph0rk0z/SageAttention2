@@ -1,4 +1,4 @@
-Sage attention hacked for turning. See the real repo: https://github.com/thu-ml/SageAttention
+Sage attention hacked for NVIDIA Turing GPUs. See the real repo: https://github.com/thu-ml/SageAttention
 
 
 MMA "fixed" thanks to https://github.com/mit-han-lab/nunchaku
