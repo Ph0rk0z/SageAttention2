@@ -1,21 +1,21 @@
 /*
- * Adapted from Flashinfer, https://github.com/flashinfer-ai/flashinfer/blob/v0.1.5/include/flashinfer/mma.cuh
- * Copyright (c) 2023 by FlashInfer team.
- *
- * Modifications copyright (c) 2024 by SageAttention team.
- * 
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+* Adapted from Flashinfer, https://github.com/flashinfer-ai/flashinfer/blob/v0.1.5/include/flashinfer/mma.cuh
+* Copyright (c) 2023 by FlashInfer team.
+*
+* Modifications copyright (c) 2024 by SageAttention team.
+* 
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
 
 #pragma once
 #include <cuda_bf16.h>
@@ -59,66 +59,66 @@ enum class MMAMode {
 };
 
 /*!
- * \brief Wrapper of PTX ldmatrix m8n8.x2 instruction, loads data from shared memory
- *   to fragment
- * \tparam T data type of the fragment
- * \param R pointer to the fragment
- * \param smem_ptr pointer to the shared memory
- */
+* \brief Wrapper of PTX ldmatrix m8n8.x2 instruction, loads data from shared memory
+*   to fragment
+* \tparam T data type of the fragment
+* \param R pointer to the fragment
+* \param smem_ptr pointer to the shared memory
+*/
 template <typename T>
 __device__ __forceinline__ void ldmatrix_m8n8x2(uint32_t* R, T* smem_ptr) {
 #ifdef LDMATRIX_M8N8X2_ENABLED
   uint32_t smem_int_ptr = static_cast<uint32_t>(__cvta_generic_to_shared(smem_ptr));
   asm volatile("ldmatrix.sync.aligned.m8n8.x2.shared.b16 {%0, %1}, [%2];\n"
-               : "=r"(R[0]), "=r"(R[1])
-               : "r"(smem_int_ptr));
+              : "=r"(R[0]), "=r"(R[1])
+              : "r"(smem_int_ptr));
 #else
   RUNTIME_ASSERT("Unsupported CUDA architecture for ldmatrix instruction");
 #endif
 }
 
 /*!
- * \brief Wrapper of PTX ldmatrix m8n8.x4 instruction, loads data from shared memory
- *   to fragment
- * \tparam T data type of the fragment
- * \param R pointer to the fragment
- * \param smem_ptr pointer to the shared memory
- */
+* \brief Wrapper of PTX ldmatrix m8n8.x4 instruction, loads data from shared memory
+*   to fragment
+* \tparam T data type of the fragment
+* \param R pointer to the fragment
+* \param smem_ptr pointer to the shared memory
+*/
 template <typename T>
 __device__ __forceinline__ void ldmatrix_m8n8x4(uint32_t* R, T* smem_ptr) {
 #ifdef LDMATRIX_M8N8X4_ENABLED
   uint32_t smem_int_ptr = static_cast<uint32_t>(__cvta_generic_to_shared(smem_ptr));
   asm volatile("ldmatrix.sync.aligned.m8n8.x4.shared.b16 {%0, %1, %2, %3}, [%4];\n"
-               : "=r"(R[0]), "=r"(R[1]), "=r"(R[2]), "=r"(R[3])
-               : "r"(smem_int_ptr));
+              : "=r"(R[0]), "=r"(R[1]), "=r"(R[2]), "=r"(R[3])
+              : "r"(smem_int_ptr));
 #else
   RUNTIME_ASSERT("Unsupported CUDA architecture for ldmatrix instruction");
 #endif
 }
 
 /*!
- * \brief Wrapper of PTX ldmatrix m8n8.x4 transposed instruction, loads data from
- *   shared memory to fragment and transposes the fragment
- * \tparam T data type of the fragment
- * \param R pointer to the fragment
- * \param smem_ptr pointer to the shared memory
- */
+* \brief Wrapper of PTX ldmatrix m8n8.x4 transposed instruction, loads data from
+*   shared memory to fragment and transposes the fragment
+* \tparam T data type of the fragment
+* \param R pointer to the fragment
+* \param smem_ptr pointer to the shared memory
+*/
 template <typename T>
 __device__ __forceinline__ void ldmatrix_m8n8x4_trans(uint32_t* R, T* smem_ptr) {
 #ifdef LDMATRIX_M8N8X4_ENABLED
   uint32_t smem_int_ptr = static_cast<uint32_t>(__cvta_generic_to_shared(smem_ptr));
   asm volatile("ldmatrix.sync.aligned.trans.m8n8.x4.shared.b16 {%0, %1, %2, %3}, [%4];\n"
-               : "=r"(R[0]), "=r"(R[1]), "=r"(R[2]), "=r"(R[3])
-               : "r"(smem_int_ptr));
+              : "=r"(R[0]), "=r"(R[1]), "=r"(R[2]), "=r"(R[3])
+              : "r"(smem_int_ptr));
 #else
   RUNTIME_ASSERT("Unsupported CUDA architecture for ldmatrix instruction");
 #endif
 }
 
 /*!
- * \brief [SM75 Optimized] Step 0 of m16n8k16 (Computes K=0..7)
- * Usage: Call this, then issue ldmatrix, then call Step 1.
- */
+* \brief [SM75 Optimized] Step 0 of m16n8k16 (Computes K=0..7)
+* Usage: Call this, then issue ldmatrix, then call Step 1.
+*/
 template <MMAMode mma_mode = MMAMode::kInplaceUpdate>
 __device__ __forceinline__ void mma_sync_m16n8k16_f16f16f32_step0(float* C, uint32_t* A, uint32_t* B) {
 #ifdef MMA_F16F16F32_M16N8K8_ENABLED
@@ -135,8 +135,8 @@ __device__ __forceinline__ void mma_sync_m16n8k16_f16f16f32_step0(float* C, uint
 }
 
 /*!
- * \brief [SM75 Optimized] Step 1 of m16n8k16 (Computes K=8..15)
- */
+* \brief [SM75 Optimized] Step 1 of m16n8k16 (Computes K=8..15)
+*/
 template <MMAMode mma_mode = MMAMode::kInplaceUpdate>
 __device__ __forceinline__ void mma_sync_m16n8k16_f16f16f32_step1(float* C, uint32_t* A, uint32_t* B) {
 #ifdef MMA_F16F16F32_M16N8K8_ENABLED
@@ -151,16 +151,16 @@ __device__ __forceinline__ void mma_sync_m16n8k16_f16f16f32_step1(float* C, uint
 }
 
 /*!
- * \brief Wrapper of the mma m16n8k16 instruction for row major and column major f16 matrix
- *   multiplication, accumulated in f32.
- * \tparam mma_mode The mode of mma instruction, either kInit or kInplaceUpdate
- * \param C pointer to the accumulator
- * \param A pointer to the fragment of matrix A
- * \param B pointer to the fragment of matrix B
- */
+* \brief Wrapper of the mma m16n8k16 instruction for row major and column major f16 matrix
+*   multiplication, accumulated in f32.
+* \tparam mma_mode The mode of mma instruction, either kInit or kInplaceUpdate
+* \param C pointer to the accumulator
+* \param A pointer to the fragment of matrix A
+* \param B pointer to the fragment of matrix B
+*/
 template <MMAMode mma_mode = MMAMode::kInplaceUpdate>
 __device__ __forceinline__ void mma_sync_m16n8k16_row_col_f16f16f32(float* C, uint32_t* A,
-                                                                     uint32_t* B) {
+                                                                    uint32_t* B) {
 #ifdef MMA_F16F16F32_M16N8K16_ENABLED
   // ! only support half dtype now
   if constexpr (mma_mode == MMAMode::kInplaceUpdate)
@@ -191,7 +191,7 @@ __device__ __forceinline__ void mma_sync_m16n8k16_row_col_f16f16f32(float* C, ui
 
   
   if constexpr (mma_mode == MMAMode::kInit) {
-     C[0] = 0.0f; C[1] = 0.0f; C[2] = 0.0f; C[3] = 0.0f;
+    C[0] = 0.0f; C[1] = 0.0f; C[2] = 0.0f; C[3] = 0.0f;
   }
 
   asm volatile(
@@ -214,16 +214,16 @@ __device__ __forceinline__ void mma_sync_m16n8k16_row_col_f16f16f32(float* C, ui
 }
 
 /*!
- * \brief Wrapper of the mma m16n16k16 instruction for row major and column major f16 matrix
- *   multiplication, accumulated in f32.
- * \tparam mma_mode The mode of mma instruction, either kInit or kInplaceUpdate
- * \param C pointer to the accumulator
- * \param A pointer to the fragment of matrix A
- * \param B pointer to the fragment of matrix B
- */
+* \brief Wrapper of the mma m16n16k16 instruction for row major and column major f16 matrix
+*   multiplication, accumulated in f32.
+* \tparam mma_mode The mode of mma instruction, either kInit or kInplaceUpdate
+* \param C pointer to the accumulator
+* \param A pointer to the fragment of matrix A
+* \param B pointer to the fragment of matrix B
+*/
 template <MMAMode mma_mode = MMAMode::kInplaceUpdate>
 __device__ __forceinline__ void mma_sync_m16n16k16_row_col_f16f16f32(float* C, uint32_t* A,
-                                                                     uint32_t* B) {
+                                                                    uint32_t* B) {
 #ifdef MMA_F16F16F32_M16N8K16_ENABLED
   // ! only support half dtype now
   if constexpr (mma_mode == MMAMode::kInplaceUpdate)
@@ -275,23 +275,18 @@ __device__ __forceinline__ void mma_sync_m16n16k16_row_col_f16f16f32(float* C, u
       C[4]=0.f; C[5]=0.f; C[6]=0.f; C[7]=0.f;
   }
 
+  // Interleave L/R instructions to hide latency
   asm volatile(
       "{\n"
-      // --- Left Tile (B0, B1) ---
-      // K=0..7
-      "mma.sync.aligned.m16n8k8.row.col.f32.f16.f16.f32 "
-      "{%0, %1, %2, %3}, {%8, %9}, {%12}, {%0, %1, %2, %3};\n"
-      // K=8..15
-      "mma.sync.aligned.m16n8k8.row.col.f32.f16.f16.f32 "
-      "{%0, %1, %2, %3}, {%10, %11}, {%13}, {%0, %1, %2, %3};\n"
-
-      // --- Right Tile (B2, B3) ---
-      // K=0..7
-      "mma.sync.aligned.m16n8k8.row.col.f32.f16.f16.f32 "
-      "{%4, %5, %6, %7}, {%8, %9}, {%14}, {%4, %5, %6, %7};\n"
-      // K=8..15
-      "mma.sync.aligned.m16n8k8.row.col.f32.f16.f16.f32 "
-      "{%4, %5, %6, %7}, {%10, %11}, {%15}, {%4, %5, %6, %7};\n"
+      // K=0..7 Left
+      "mma.sync.aligned.m16n8k8.row.col.f32.f16.f16.f32 {%0, %1, %2, %3}, {%8, %9}, {%12}, {%0, %1, %2, %3};\n"
+      // K=0..7 Right
+      "mma.sync.aligned.m16n8k8.row.col.f32.f16.f16.f32 {%4, %5, %6, %7}, {%8, %9}, {%14}, {%4, %5, %6, %7};\n"
+      
+      // K=8..15 Left
+      "mma.sync.aligned.m16n8k8.row.col.f32.f16.f16.f32 {%0, %1, %2, %3}, {%10, %11}, {%13}, {%0, %1, %2, %3};\n"
+      // K=8..15 Right
+      "mma.sync.aligned.m16n8k8.row.col.f32.f16.f16.f32 {%4, %5, %6, %7}, {%10, %11}, {%15}, {%4, %5, %6, %7};\n"
       "}\n"
       : "+f"(C[0]), "+f"(C[1]), "+f"(C[2]), "+f"(C[3]),
         "+f"(C[4]), "+f"(C[5]), "+f"(C[6]), "+f"(C[7])
@@ -303,16 +298,16 @@ __device__ __forceinline__ void mma_sync_m16n16k16_row_col_f16f16f32(float* C, u
 }
 
 /*!
- * \brief Wrapper of the mma m16n8k16 instruction for row major and column major f16 matrix
- *   multiplication, accumulated in f16.
- * \tparam mma_mode The mode of mma instruction, either kInit or kInplaceUpdate
- * \param C pointer to the accumulator
- * \param A pointer to the fragment of matrix A
- * \param B pointer to the fragment of matrix B
- */
+* \brief Wrapper of the mma m16n8k16 instruction for row major and column major f16 matrix
+*   multiplication, accumulated in f16.
+* \tparam mma_mode The mode of mma instruction, either kInit or kInplaceUpdate
+* \param C pointer to the accumulator
+* \param A pointer to the fragment of matrix A
+* \param B pointer to the fragment of matrix B
+*/
 template <MMAMode mma_mode = MMAMode::kInplaceUpdate>
 __device__ __forceinline__ void mma_sync_m16n8k16_row_col_f16f16f16(uint32_t* C, uint32_t* A,
-                                                                     uint32_t* B) {
+                                                                    uint32_t* B) {
 #ifdef MMA_F16F16F16_M16N8K16_ENABLED
   if constexpr (mma_mode == MMAMode::kInplaceUpdate)
   {
@@ -342,16 +337,16 @@ __device__ __forceinline__ void mma_sync_m16n8k16_row_col_f16f16f16(uint32_t* C,
 }
 
 /*!
- * \brief Wrapper of the mma m16n16k16 instruction for row major and column major f16 matrix
- *   multiplication, accumulated in f16.
- * \tparam mma_mode The mode of mma instruction, either kInit or kInplaceUpdate
- * \param C pointer to the accumulator
- * \param A pointer to the fragment of matrix A
- * \param B pointer to the fragment of matrix B
- */
+* \brief Wrapper of the mma m16n16k16 instruction for row major and column major f16 matrix
+*   multiplication, accumulated in f16.
+* \tparam mma_mode The mode of mma instruction, either kInit or kInplaceUpdate
+* \param C pointer to the accumulator
+* \param A pointer to the fragment of matrix A
+* \param B pointer to the fragment of matrix B
+*/
 template <MMAMode mma_mode = MMAMode::kInplaceUpdate>
 __device__ __forceinline__ void mma_sync_m16n16k16_row_col_f16f16f16(uint32_t* C, uint32_t* A,
-                                                                     uint32_t* B) {
+                                                                    uint32_t* B) {
 #ifdef MMA_F16F16F16_M16N8K16_ENABLED
   if constexpr (mma_mode == MMAMode::kInplaceUpdate)
   {
@@ -401,12 +396,16 @@ __device__ __forceinline__ void mma_sync_m16n16k16_row_col_f16f16f16(uint32_t* C
   asm volatile(
     "{\n"
     "  .reg .b32 t0, t1, t2, t3;\n\n"
+    // Left K0
     "  mma.sync.aligned.m16n8k8.row.col.f16.f16.f16.f16 "
     "{t0, t1}, {%4, %5}, {%8}, {%12, %13};\n"
+    // Right K0
     "  mma.sync.aligned.m16n8k8.row.col.f16.f16.f16.f16 "
     "{t2, t3}, {%4, %5}, {%10}, {%14, %15};\n"
+    // Left K1
     "  mma.sync.aligned.m16n8k8.row.col.f16.f16.f16.f16 "
     "{%0, %1}, {%6, %7}, {%9}, {t0, t1};\n\n" 
+    // Right K1
     "  mma.sync.aligned.m16n8k8.row.col.f16.f16.f16.f16 "
     "{%2, %3}, {%6, %7}, {%11}, {t2, t3};\n"
     "}\n"
@@ -421,16 +420,16 @@ __device__ __forceinline__ void mma_sync_m16n16k16_row_col_f16f16f16(uint32_t* C
 }
 
 /*!
- * \brief Wrapper of the mma m16n8k32 instruction for row major and column major int8 matrix
- *   multiplication, accumulated in int32.
- * \tparam mma_mode The mode of mma instruction, either kInit or kInplaceUpdate
- * \param C pointer to the accumulator
- * \param A pointer to the fragment of matrix A
- * \param B pointer to the fragment of matrix B
- */
+* \brief Wrapper of the mma m16n8k32 instruction for row major and column major int8 matrix
+*   multiplication, accumulated in int32.
+* \tparam mma_mode The mode of mma instruction, either kInit or kInplaceUpdate
+* \param C pointer to the accumulator
+* \param A pointer to the fragment of matrix A
+* \param B pointer to the fragment of matrix B
+*/
 template <MMAMode mma_mode = MMAMode::kInplaceUpdate>
 __device__ __forceinline__ void mma_sync_m16n8k32_row_col_s8s8s32(int32_t* C, uint32_t* A,
-                                                                   uint32_t* B) {
+                                                                  uint32_t* B) {
 #ifdef MMA_S8S8S32_M16N8K32_ENABLED
   if constexpr (mma_mode == MMAMode::kInplaceUpdate)
   {
@@ -485,16 +484,16 @@ __device__ __forceinline__ void mma_sync_m16n8k32_row_col_s8s8s32(int32_t* C, ui
 }
 
 /*!
- * \brief Wrapper of the mma m16n16k32 instruction for row major and column major int8 matrix
- *   multiplication, accumulated in int32.
- * \tparam mma_mode The mode of mma instruction, either kInit or kInplaceUpdate
- * \param C pointer to the accumulator
- * \param A pointer to the fragment of matrix A
- * \param B pointer to the fragment of matrix B
- */
+* \brief Wrapper of the mma m16n16k32 instruction for row major and column major int8 matrix
+*   multiplication, accumulated in int32.
+* \tparam mma_mode The mode of mma instruction, either kInit or kInplaceUpdate
+* \param C pointer to the accumulator
+* \param A pointer to the fragment of matrix A
+* \param B pointer to the fragment of matrix B
+*/
 template <MMAMode mma_mode = MMAMode::kInplaceUpdate>
 __device__ __forceinline__ void mma_sync_m16n16k32_row_col_s8s8s32(int32_t* C, uint32_t* A,
-                                                                   uint32_t* B) {
+                                                                  uint32_t* B) {
 #ifdef MMA_S8S8S32_M16N8K32_ENABLED
   if constexpr (mma_mode == MMAMode::kInplaceUpdate)
   {
@@ -545,23 +544,26 @@ __device__ __forceinline__ void mma_sync_m16n16k32_row_col_s8s8s32(int32_t* C, u
       C[4]=0; C[5]=0; C[6]=0; C[7]=0;
   }
 
+  // Interleave L/R instructions to hide latency
   asm volatile(
       "{\n"
-      // --- Left Tile (B0, B1) ---
-      // K Chunk 0 (0-15)
-      "mma.sync.aligned.m8n8k16.row.col.s32.s8.s8.s32 {%0, %1}, {%8}, {%12}, {%0, %1};\n" // TL
-      "mma.sync.aligned.m8n8k16.row.col.s32.s8.s8.s32 {%2, %3}, {%9}, {%12}, {%2, %3};\n" // BL
-      // K Chunk 1 (16-31)
-      "mma.sync.aligned.m8n8k16.row.col.s32.s8.s8.s32 {%0, %1}, {%10}, {%13}, {%0, %1};\n" // TL
-      "mma.sync.aligned.m8n8k16.row.col.s32.s8.s8.s32 {%2, %3}, {%11}, {%13}, {%2, %3};\n" // BL
+      // 1. Left Tile TL K0
+      "mma.sync.aligned.m8n8k16.row.col.s32.s8.s8.s32 {%0, %1}, {%8}, {%12}, {%0, %1};\n"
+      // 2. Right Tile TR K0
+      "mma.sync.aligned.m8n8k16.row.col.s32.s8.s8.s32 {%4, %5}, {%8}, {%14}, {%4, %5};\n" 
+      // 3. Left Tile BL K0
+      "mma.sync.aligned.m8n8k16.row.col.s32.s8.s8.s32 {%2, %3}, {%9}, {%12}, {%2, %3};\n" 
+      // 4. Right Tile BR K0
+      "mma.sync.aligned.m8n8k16.row.col.s32.s8.s8.s32 {%6, %7}, {%9}, {%14}, {%6, %7};\n" 
 
-      // --- Right Tile (B2, B3) ---
-      // K Chunk 0 (0-15)
-      "mma.sync.aligned.m8n8k16.row.col.s32.s8.s8.s32 {%4, %5}, {%8}, {%14}, {%4, %5};\n" // TR
-      "mma.sync.aligned.m8n8k16.row.col.s32.s8.s8.s32 {%6, %7}, {%9}, {%14}, {%6, %7};\n" // BR
-      // K Chunk 1 (16-31)
-      "mma.sync.aligned.m8n8k16.row.col.s32.s8.s8.s32 {%4, %5}, {%10}, {%15}, {%4, %5};\n" // TR
-      "mma.sync.aligned.m8n8k16.row.col.s32.s8.s8.s32 {%6, %7}, {%11}, {%15}, {%6, %7};\n" // BR
+      // 5. Left Tile TL K1
+      "mma.sync.aligned.m8n8k16.row.col.s32.s8.s8.s32 {%0, %1}, {%10}, {%13}, {%0, %1};\n" 
+      // 6. Right Tile TR K1
+      "mma.sync.aligned.m8n8k16.row.col.s32.s8.s8.s32 {%4, %5}, {%10}, {%15}, {%4, %5};\n" 
+      // 7. Left Tile BL K1
+      "mma.sync.aligned.m8n8k16.row.col.s32.s8.s8.s32 {%2, %3}, {%11}, {%13}, {%2, %3};\n" 
+      // 8. Right Tile BR K1
+      "mma.sync.aligned.m8n8k16.row.col.s32.s8.s8.s32 {%6, %7}, {%11}, {%15}, {%6, %7};\n" 
       "}\n"
       : "+r"(C[0]), "+r"(C[1]), "+r"(C[2]), "+r"(C[3]),
         "+r"(C[4]), "+r"(C[5]), "+r"(C[6]), "+r"(C[7])
@@ -573,16 +575,16 @@ __device__ __forceinline__ void mma_sync_m16n16k32_row_col_s8s8s32(int32_t* C, u
 }
 
 /*!
- * \brief Wrapper of the mma m16n8k32 instruction for row major and column major int4 matrix
- *   multiplication, accumulated in int32.
- * \tparam mma_mode The mode of mma instruction, either kInit or kInplaceUpdate
- * \param C pointer to the accumulator
- * \param A pointer to the fragment of matrix A
- * \param B pointer to the fragment of matrix B
- */
+* \brief Wrapper of the mma m16n8k32 instruction for row major and column major int4 matrix
+*   multiplication, accumulated in int32.
+* \tparam mma_mode The mode of mma instruction, either kInit or kInplaceUpdate
+* \param C pointer to the accumulator
+* \param A pointer to the fragment of matrix A
+* \param B pointer to the fragment of matrix B
+*/
 template <MMAMode mma_mode = MMAMode::kInplaceUpdate>
 __device__ __forceinline__ void mma_sync_m16n8k64_row_col_s4s4s32(int32_t* C, uint32_t* A,
-                                                                   uint32_t* B) {
+                                                                  uint32_t* B) {
 #ifdef MMA_S4S4S32_M16N8K64_ENABLED
   if constexpr (mma_mode == MMAMode::kInplaceUpdate)
   {
@@ -614,16 +616,16 @@ __device__ __forceinline__ void mma_sync_m16n8k64_row_col_s4s4s32(int32_t* C, ui
 }
 
 /*!
- * \brief Wrapper of the mma m16n16k64 instruction for row major and column major int4 matrix
- *   multiplication, accumulated in int32.
- * \tparam mma_mode The mode of mma instruction, either kInit or kInplaceUpdate
- * \param C pointer to the accumulator
- * \param A pointer to the fragment of matrix A
- * \param B pointer to the fragment of matrix B
- */
+* \brief Wrapper of the mma m16n16k64 instruction for row major and column major int4 matrix
+*   multiplication, accumulated in int32.
+* \tparam mma_mode The mode of mma instruction, either kInit or kInplaceUpdate
+* \param C pointer to the accumulator
+* \param A pointer to the fragment of matrix A
+* \param B pointer to the fragment of matrix B
+*/
 template <MMAMode mma_mode = MMAMode::kInplaceUpdate>
 __device__ __forceinline__ void mma_sync_m16n16k64_row_col_s4s4s32(int32_t* C, uint32_t* A,
-                                                                   uint32_t* B) {
+                                                                  uint32_t* B) {
 #ifdef MMA_S4S4S32_M16N8K64_ENABLED
   if constexpr (mma_mode == MMAMode::kInplaceUpdate)
   {
@@ -673,16 +675,16 @@ __device__ __forceinline__ void mma_sync_m16n16k64_row_col_s4s4s32(int32_t* C, u
 }
 
 /*!
- * \brief Wrapper of the mma m16n8k32 instruction for row major and column major fp8 e4m3 matrix
- *   multiplication, accumulated in fp32.
- * \tparam mma_mode The mode of mma instruction, either kInit or kInplaceUpdate
- * \param C pointer to the accumulator
- * \param A pointer to the fragment of matrix A
- * \param B pointer to the fragment of matrix B
- */
+* \brief Wrapper of the mma m16n8k32 instruction for row major and column major fp8 e4m3 matrix
+*   multiplication, accumulated in fp32.
+* \tparam mma_mode The mode of mma instruction, either kInit or kInplaceUpdate
+* \param C pointer to the accumulator
+* \param A pointer to the fragment of matrix A
+* \param B pointer to the fragment of matrix B
+*/
 template <MMAMode mma_mode = MMAMode::kInplaceUpdate>
 __device__ __forceinline__ void mma_sync_m16n8k32_row_col_f8f8f32(float* C, uint32_t* A,
-                                                                   uint32_t* B) {
+                                                                  uint32_t* B) {
 #ifdef MMA_F8F8F32_M16N8K16_ENABLED
   if constexpr (mma_mode == MMAMode::kInplaceUpdate)
   {
@@ -714,16 +716,16 @@ __device__ __forceinline__ void mma_sync_m16n8k32_row_col_f8f8f32(float* C, uint
 }
 
 /*!
- * \brief Wrapper of the mma m16n16k32 instruction for row major and column major fp8 matrix
- *   multiplication, accumulated in fp32.
- * \tparam mma_mode The mode of mma instruction, either kInit or kInplaceUpdate
- * \param C pointer to the accumulator
- * \param A pointer to the fragment of matrix A
- * \param B pointer to the fragment of matrix B
- */
+* \brief Wrapper of the mma m16n16k32 instruction for row major and column major fp8 matrix
+*   multiplication, accumulated in fp32.
+* \tparam mma_mode The mode of mma instruction, either kInit or kInplaceUpdate
+* \param C pointer to the accumulator
+* \param A pointer to the fragment of matrix A
+* \param B pointer to the fragment of matrix B
+*/
 template <MMAMode mma_mode = MMAMode::kInplaceUpdate>
 __device__ __forceinline__ void mma_sync_m16n16k32_row_col_f8f8f32(float* C, uint32_t* A,
-                                                                   uint32_t* B) {
+                                                                  uint32_t* B) {
 #ifdef MMA_F8F8F32_M16N8K16_ENABLED
   if constexpr (mma_mode == MMAMode::kInplaceUpdate)
   {
@@ -775,8 +777,8 @@ __device__ __forceinline__ void mma_sync_m16n16k32_row_col_f8f8f32(float* C, uin
 }
 
 /*!
- * \brief Use mma instructions to compute rowsum.
- */
+* \brief Use mma instructions to compute rowsum.
+*/
 __device__ __forceinline__ void rowsum_f16f16f32(float* d, uint32_t* s) {
 #ifdef MMA_F16F16F32_M16N8K16_ENABLED
   asm volatile(
@@ -812,8 +814,8 @@ __device__ __forceinline__ void rowsum_f16f16f32(float* d, uint32_t* s) {
 }
 
 /*!
- * \brief Use mma instructions to compute rowsum.
- */
+* \brief Use mma instructions to compute rowsum.
+*/
 __device__ __forceinline__ void rowsum_f8f8f32(float* d, uint32_t* s) {
 #ifdef MMA_F8F8F32_M16N8K16_ENABLED
   asm volatile(
