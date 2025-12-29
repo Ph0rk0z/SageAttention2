@@ -110,6 +110,9 @@
   } else if (block_size == 128) {                               \
     constexpr int BLOCK_SIZE = 128;                             \
     __VA_ARGS__                                                 \
+  } else if (block_size == 32) {                                \
+    constexpr int BLOCK_SIZE = 32;                              \
+    __VA_ARGS__                                                 \
   }  else {                                                     \
     std::ostringstream err_msg;                                 \
     err_msg << "Unsupported block_size " << int(block_size);    \
@@ -128,4 +131,3 @@
     err_msg << "Unsupported warp_block_size " << int(warp_block_size);   \
     throw std::invalid_argument(err_msg.str());                          \
   }
-
